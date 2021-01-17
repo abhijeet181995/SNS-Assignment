@@ -42,7 +42,7 @@ class client:
         cpy = self
         cpy.choice = 3
         cpy.name = name
-        s.sendall(pickle.dumps(self))
+        s.sendall(pickle.dumps(cpy))
         port = pickle.loads(s.recv(1024)).port
         s.close()
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
