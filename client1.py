@@ -2,8 +2,7 @@ import clientlib
 
 print("**********Welcome to Chat Client*********")
 port = int(input("Enter Port\n"))
-s = clientlib.client(port)
-
+s = clientlib.client(port,'client1')
 while True:
     inpt = input("Enter Command\n>>").split()
     if inpt[0]=="signin" and s.online==0 :
@@ -21,9 +20,11 @@ while True:
             print("Sign Up Success")
         else:
             print("Sign Up Failed")
-    elif inpt[0]=="send" and inpt[1]=="group" and s.online == 1:
-        pass
-    elif inpt[0]=="send" and s.online == 1:
+    # elif inpt[0]=="send" and inpt[1]=="group" and s.online == 1:
+    #     pass
+    elif inpt[0]=="sendfile" and s.online==0:
+        s.sendFile(inpt[1],inpt[2])
+    elif inpt[0]=="send" and s.online==0:
         s.message(inpt[1],inpt[2])
     elif inpt[0]=="join":
         pass
