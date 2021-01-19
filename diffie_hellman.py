@@ -1,5 +1,6 @@
 import socket
 import random
+import hashlib
 
 class DiffieHellman:
     prime=1124685973
@@ -17,9 +18,10 @@ class DiffieHellman:
         self.key3=int()
         pass
     
-    #convert key to 56/64-bit
+    #currently returning 64-bit key in bytes(data type of python)
     def key_calculator(self,private_key,public_key):
         session_key=pow(public_key,private_key,self.prime)
+        session_key=hashlib.sha256(str(session_key)).digest()[0:8]
         return session_key
 
     def initiate_key_exchange(self,s):
