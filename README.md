@@ -3,7 +3,8 @@
 
 ## Issue Resolved
 - Group Messaging
-- P2P messaing
+- P2P messaging
+- P2P media
 
 
 ## Issues Pending
