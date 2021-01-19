@@ -1,5 +1,9 @@
 import socket,pickle
 import threading
+import json
+import diffie_hellman
+import crypto
+
 HOST = '127.0.0.1'
 PORT = 54005
 
@@ -18,7 +22,6 @@ class client:
         s.send(pickle.dumps(cpy))
         if s.recv(1).decode()=="1":
             self.online = 1
-
             return 1
         else:
             return 0
@@ -48,11 +51,34 @@ class client:
         while True:
             conn,addr=server.accept()
             print(addr)
-            data = pickle.loads(conn.recv(1024))
-            if data['type']=='text':
-                print(data['msg'])
-            else:
-                self.storeFile(conn,data['fileName'])
+            recvieved_message=bytearray()
+            while True:
+                temp_recvieved_message=conn.recv(1024)
+                recvieved_message+=temp_recvieved_message
+                if len(temp_recvieved_message)<1024:
+                    break
+            #have to add decryption
+            if recvieved_message==b'DHKE':
+                dhke=diffie_hellman.DiffieHellman(self.rollnum)
+                #print("OBJ created")
+                dhke.party2_key_exchange(conn)
+                print(dhke.key1)
+                print(dhke.key2)
+                print(dhke.key3)
+                encrypted_message=bytearray()
+                while True:
+                    temp_encrypted_message=conn.recv(124)
+                    encrypted_message+=temp_encrypted_message
+                    if len(temp_encrypted_message)<1024:
+                        break
+                #decrypt the message here
+                decrypted_data=crypto.decrypt_p2p(encrypted_message,dhke.key1,dhke.key2,dhke.key3)
+                data = json.loads(decrypted_data)
+                if data['type']=='text':
+                    print(data['msg'])
+                else:
+                    self.storeFile(conn,data['fileName'])
+            
             conn.close()
     def storeFile(self,conn,fileName):
         f = open(self.homeFolder+'/'+fileName,'wb')
