@@ -59,12 +59,9 @@ class client:
                     break
             #have to add decryption
             if recvieved_message==b'DHKE':
-                dhke=diffie_hellman.DiffieHellman(self.rollnum)
+                self.dhke=diffie_hellman.DiffieHellman(self.rollnum)
                 #print("OBJ created")
-                dhke.party2_key_exchange(conn)
-                print(dhke.key1)
-                print(dhke.key2)
-                print(dhke.key3)
+                self.dhke.party2_key_exchange(conn)
                 encrypted_message=bytearray()
                 while True:
                     temp_encrypted_message=conn.recv(124)
@@ -72,7 +69,8 @@ class client:
                     if len(temp_encrypted_message)<1024:
                         break
                 #decrypt the message here
-                decrypted_data=crypto.decrypt_p2p(encrypted_message,dhke.key1,dhke.key2,dhke.key3)
+                encrypted_message=bytes(encrypted_message)
+                decrypted_data=crypto.decrypt_p2p(encrypted_message,self.dhke.key1,self.dhke.key2,self.dhke.key3)
                 data = json.loads(decrypted_data)
                 if data['type']=='text':
                     print(data['msg'])
@@ -101,9 +99,9 @@ class client:
         f = open(self.homeFolder +"/"+fileName,'rb')
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,port))
-        dhke=diffie_hellman.DiffieHellman(self.rollnum)
+        self.dhke=diffie_hellman.DiffieHellman(self.rollnum)
         s.connect((HOST,port))
-        dhke.initiate_key_exchange(s)
+        self.dhke.initiate_key_exchange(s)
         messageObj = {}
         messageObj['type'] = 'file'
         messageObj['fileName'] = fileName
@@ -112,7 +110,7 @@ class client:
         #changed size to 1023 so that encrypted result is 1024 bytes or less
         l = f.read(1023)
         while (l):
-            cipher_text=crypto.encrypt_p2p(l,dhke.key1,dhke.key2,dhke.key3)
+            cipher_text=crypto.encrypt_p2p(l,self.dhke.key1,self.dhke.key2,self.dhke.key3)
             s.send(cipher_text)
             l = f.read(1023)
         f.close()
@@ -129,11 +127,11 @@ class client:
         messageObj['type'] = 'text'
         messageObj['msg']=msg
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        dhke=diffie_hellman.DiffieHellman(self.rollnum)
+        self.dhke1=diffie_hellman.DiffieHellman(self.rollnum)
         s.connect((HOST,port))
-        dhke.initiate_key_exchange(s)
+        self.dhke1.initiate_key_exchange(s)
         plain_text=json.dumps(messageObj).encode('utf-8')
-        cipher_text=crypto.encrypt_p2p(plain_text,dhke.key1,dhke.key2,dhke.key3)
+        cipher_text=crypto.encrypt_p2p(plain_text,self.dhke1.key1,self.dhke1.key2,self.dhke1.key3)
         #s.send(pickle.dumps(messageObj))
         s.sendall(cipher_text)
         s.close()
@@ -163,5 +161,3 @@ class client:
         cpy.msg = message
         s.sendall(pickle.dumps(cpy))
         s.close()
-
-

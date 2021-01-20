@@ -21,7 +21,7 @@ class DiffieHellman:
     #currently returning 64-bit key in bytes(data type of python)
     def key_calculator(self,private_key,public_key):
         session_key=pow(public_key,private_key,self.prime)
-        session_key=hashlib.sha256(str(session_key)).digest()[0:8]
+        session_key=hashlib.sha256(str(session_key).encode('utf-8')).digest()[0:8]
         return session_key
 
     def initiate_key_exchange(self,s):
@@ -60,9 +60,6 @@ class DiffieHellman:
                 break
         other_public_key3=int(recv.decode('utf-8'))
         self.key3=self.key_calculator(self.private_key3,other_public_key3)
-        print("Other public key1 ",other_public_key1)
-        print("Other public key2 ",other_public_key2)
-        print("Other public key3 ",other_public_key3)
         pass
 
     def party2_key_exchange(self,sock):
@@ -101,7 +98,4 @@ class DiffieHellman:
         other_public_key3=int(recv.decode('utf-8'))
         self.key3=self.key_calculator(self.private_key3,other_public_key3)
         sock.sendall(str(self.public_key3).encode('utf-8'))
-        print("Other public key1 ",other_public_key1)
-        print("Other public key2 ",other_public_key2)
-        print("Other public key3 ",other_public_key3)
         pass
