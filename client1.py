@@ -20,6 +20,8 @@ while True:
             print("Sign Up Success")
         else:
             print("Sign Up Failed")
+    elif inpt[0]=="sendfile" and inpt[1]=="group" and s.online == 1:
+        s.send_file_group(inpt[2],inpt[3])
     elif inpt[0]=="send" and inpt[1]=="group" and s.online == 1:
         s.mess_group(inpt[2],inpt[3])
     elif inpt[0]=="sendfile" and s.online==1:

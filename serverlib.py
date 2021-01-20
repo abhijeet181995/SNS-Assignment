@@ -27,30 +27,35 @@ class server:
         while True:
             conn,addr=self.s.accept()
             data = pickle.loads(conn.recv(1024))
-            if data.choice==1:
-                if data.name in self.clientlist.keys() and self.clientlist[data.name].pswd==data.pswd:
-                    self.clientlist[data.name].online=1
+            if data['choice']=='signin':
+                if data['name'] in self.clientlist.keys() and self.clientlist[data['name']]['pswd']==data['pswd']:
+                    self.clientlist[data['name']]['online']=1
                     conn.send(b"1")
                 else:
                     conn.send(b"0")
-            if data.choice==2:
-                self.clientlist[data.name]=data
-                print(data.name)
+            if data['choice']=='signup':
+                self.clientlist[data['name']]=data
+                print(data['name'])
                 conn.send(b"1")
-            if data.choice==3:
-                data.port = self.clientlist[data.name].port
+            if data['choice']=='get-client-port':
+                print(data['name'])
+                print(self.clientlist[data['name']])
+                data['port'] = self.clientlist[data['name']]['port']
                 conn.sendall(pickle.dumps(data))
-            if data.choice==4:
-                if data.groupname in self.grouplist.keys():
-                    self.grouplist[data.groupname].addmember(data.name,data.port)
+            if data['choice']=='join-group':
+                if data['groupname'] in self.grouplist.keys():
+                    self.grouplist[data['groupname']].addmember(data['name'],data['port'])
                 else:
-                    g = group(data.groupname)
-                    g.addmember(data.name,data.port)
-                    self.grouplist[data.groupname]=g
-            if data.choice==5:
+                    g = group(data['groupname'])
+                    g.addmember(data['name'],data['port'])
+                    self.grouplist[data['groupname']]=g
+            if data['choice']=='list-group':
                 groupstring = [[self.grouplist[name].grname,self.grouplist[name].membercount] for name in self.grouplist.keys()]
                 conn.sendall(str(groupstring).encode())
-            if data.choice==6:
+
+
+            
+            if data['choice']=='message-group':
                 for port in g.getportlist():
                     m= socket.socket(socket.AF_INET,socket.SOCK_STREAM)
                     m.connect(('127.0.0.1',port))

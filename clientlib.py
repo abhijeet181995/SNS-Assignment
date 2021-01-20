@@ -15,11 +15,11 @@ class client:
     def signin(self,name,pswd):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
-        cpy = self
-        cpy.choice = 1
-        cpy.pswd = pswd
-        cpy.name = name
-        s.send(pickle.dumps(cpy))
+        requestObj = {}
+        requestObj['choice'] = 'signin'
+        requestObj['pswd'] = pswd
+        requestObj['name'] = name
+        s.sendall(pickle.dumps(requestObj))
         if s.recv(1).decode()=="1":
             self.online = 1
             return 1
@@ -27,14 +27,18 @@ class client:
             return 0
         s.close()
     def signup(self,name,rollnum,pswd):
-        self.name = name
-        self.rollnum = rollnum
-        self.pswd = pswd
-        self.choice = -1
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
-        self.choice = 2
-        s.sendall(pickle.dumps(self))
+        requestObj = {}
+        requestObj['choice'] = 'signup'
+        requestObj['roll-num'] = rollnum
+        requestObj['pswd'] = pswd
+        requestObj['port']=self.port
+        requestObj['name'] = name
+        self.name=name
+        self.password=pswd
+        self.rollnum=rollnum
+        s.sendall(pickle.dumps(requestObj))
         if s.recv(1).decode()=="1":
             threading.Thread(target=self.listen).start()
             return 1
@@ -88,20 +92,22 @@ class client:
             f.write(decrypted_data)
         f.close()
         print(fileName ," received")
+    
+    def sendFileGroup(self,groupName,fileName):
+        pass
 
     def sendFile(self,clientName,fileName):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
-        cpy = self
-        cpy.choice = 3
-        cpy.name = clientName
-        s.sendall(pickle.dumps(cpy))
-        port = pickle.loads(s.recv(1024)).port
+        requestObj = {}
+        requestObj['choice'] = 'get-client-port'
+        requestObj['name']=clientName
+        s.sendall(pickle.dumps(requestObj))
+        client_port = pickle.loads(s.recv(1024)).port
         f = open(self.homeFolder +"/"+fileName,'rb')
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        s.connect((HOST,port))
         self.dhke=diffie_hellman.DiffieHellman(self.rollnum)
-        s.connect((HOST,port))
+        s.connect((HOST,client_port))
         self.dhke.initiate_key_exchange(s)
         messageObj = {}
         messageObj['type'] = 'file'
@@ -116,49 +122,49 @@ class client:
             l = f.read(1023)
         f.close()
         s.close()
-    def message(self,name,msg):
+    def message(self,clientName,msg):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
-        cpy = self
-        cpy.choice = 3
-        cpy.name = name
-        s.sendall(pickle.dumps(cpy))
-        port = pickle.loads(s.recv(1024)).port
+        requestObj = {}
+        requestObj['choice'] = 'get-client-port'
+        requestObj['name']=clientName
+        s.sendall(pickle.dumps(requestObj))
+        client_port = pickle.loads(s.recv(1024))['port']
         messageObj = {}
         messageObj['type'] = 'text'
         messageObj['msg']=msg
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.dhke1=diffie_hellman.DiffieHellman(self.rollnum)
-        s.connect((HOST,port))
+        s.connect((HOST,client_port))
         self.dhke1.initiate_key_exchange(s)
         plain_text=json.dumps(messageObj).encode('utf-8')
         cipher_text=crypto.encrypt_p2p(plain_text,self.dhke1.key1,self.dhke1.key2,self.dhke1.key3)
-        #s.send(pickle.dumps(messageObj))
         s.sendall(cipher_text)
         s.close()
     def join_group(self,name):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
-        cpy = self
-        cpy.choice = 4
-        cpy.groupname = name
-        s.sendall(pickle.dumps(cpy))
+        requestObj = {}
+        requestObj['choice'] = 'join_group'
+        requestObj['groupname']=name
+        requestObj['port'] =self.port
+        s.sendall(pickle.dumps(requestObj))
         s.close()
     def list_group(self):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
-        cpy = self
-        cpy.choice = 5
-        s.sendall(pickle.dumps(cpy))
+        requestObj = {}
+        requestObj['choice'] = 'list_group'
+        s.sendall(pickle.dumps(requestObj))
         groupstring = s.recv(1024).decode()
         s.close()
         return groupstring
     def mess_group(self,name,message):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
-        cpy = self
-        cpy.choice = 6
-        cpy.groupname=name
-        cpy.msg = message
-        s.sendall(pickle.dumps(cpy))
+        requestObj = {}
+        requestObj['choice'] = 'message_group'
+        requestObj['groupname'] = name
+        requestObj['msg'] = message
+        s.sendall(pickle.dumps(requestObj))
         s.close()
