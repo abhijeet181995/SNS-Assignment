@@ -64,7 +64,7 @@ class client:
                 self.dhke.party2_key_exchange(conn)
                 encrypted_message=bytearray()
                 while True:
-                    temp_encrypted_message=conn.recv(124)
+                    temp_encrypted_message=conn.recv(1024)
                     encrypted_message+=temp_encrypted_message
                     if len(temp_encrypted_message)<1024:
                         break
