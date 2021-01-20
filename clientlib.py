@@ -101,15 +101,20 @@ class client:
         f = open(self.homeFolder +"/"+fileName,'rb')
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,port))
+        dhke=diffie_hellman.DiffieHellman(self.rollnum)
+        s.connect((HOST,port))
+        dhke.initiate_key_exchange(s)
         messageObj = {}
         messageObj['type'] = 'file'
         messageObj['fileName'] = fileName
         s.send(pickle.dumps(messageObj))
         print(fileName ," sent")
-        l = f.read(1024)
+        #changed size to 1023 so that encrypted result is 1024 bytes or less
+        l = f.read(1023)
         while (l):
-            s.send(l)
-            l = f.read(1024)
+            cipher_text=crypto.encrypt_p2p(l,dhke.key1,dhke.key2,dhke.key3)
+            s.send(cipher_text)
+            l = f.read(1023)
         f.close()
         s.close()
     def message(self,name,msg):
@@ -124,8 +129,13 @@ class client:
         messageObj['type'] = 'text'
         messageObj['msg']=msg
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        dhke=diffie_hellman.DiffieHellman(self.rollnum)
         s.connect((HOST,port))
-        s.send(pickle.dumps(messageObj))
+        dhke.initiate_key_exchange(s)
+        plain_text=json.dumps(messageObj).encode('utf-8')
+        cipher_text=crypto.encrypt_p2p(plain_text,dhke.key1,dhke.key2,dhke.key3)
+        #s.send(pickle.dumps(messageObj))
+        s.sendall(cipher_text)
         s.close()
     def join_group(self,name):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
