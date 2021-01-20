@@ -84,7 +84,8 @@ class client:
             data=conn.recv(1024)
             if not data:
                 break
-            f.write(data)
+            decrypted_data=crypto.decrypt_p2p(data,self.dhke.key1,self.dhke.key2,self.dhke.key3)
+            f.write(decrypted_data)
         f.close()
         print(fileName ," received")
 
