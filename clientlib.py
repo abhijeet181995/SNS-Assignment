@@ -76,16 +76,18 @@ class client:
                 encrypted_message=bytes(encrypted_message)
                 decrypted_data=crypto.decrypt_p2p(encrypted_message,self.dhke.key1,self.dhke.key2,self.dhke.key3)
                 data = json.loads(decrypted_data)
+                print(data)
                 if data['type']=='text':
                     print(data['msg'])
                 else:
-                    self.storeFile(conn,data['fileName'])
+                    self.storeFile(conn,data['filename'])
             else:                           # Group Encryption Here
                 print("Group Message")
                 print(recvieved_message.decode())
             
             conn.close()
     def storeFile(self,conn,fileName):
+        print(fileName)
         f = open(self.homeFolder+'/'+fileName,'wb')
         while(True):
             data=conn.recv(1024)
@@ -108,20 +110,22 @@ class client:
         s.sendall(pickle.dumps(requestObj))
         client_port = pickle.loads(s.recv(1024))['port']
         f = open(self.homeFolder +"/"+fileName,'rb')
-        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        self.dhke=diffie_hellman.DiffieHellman(self.rollnum)
-        s.connect((HOST,client_port))
-        self.dhke.initiate_key_exchange(s)
         messageObj = {}
         messageObj['type'] = 'file'
-        messageObj['fileName'] = fileName
-        s.send(pickle.dumps(messageObj))
+        messageObj['filename']=fileName
+        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self.dhke1=diffie_hellman.DiffieHellman(self.rollnum)
+        s.connect((HOST,client_port))
+        self.dhke1.initiate_key_exchange(s)
+        plain_text=json.dumps(messageObj).encode('utf-8')
+        cipher_text=crypto.encrypt_p2p(plain_text,self.dhke1.key1,self.dhke1.key2,self.dhke1.key3)
+        s.sendall(cipher_text)
         print(fileName ," sent")
         #changed size to 1023 so that encrypted result is 1024 bytes or less
         l = f.read(1023)
         while (l):
-            cipher_text=crypto.encrypt_p2p(l,self.dhke.key1,self.dhke.key2,self.dhke.key3)
-            s.send(cipher_text)
+            cipher_text=crypto.encrypt_p2p(l,self.dhke1.key1,self.dhke1.key2,self.dhke1.key3)
+            s.sendall(cipher_text)
             l = f.read(1023)
         f.close()
         s.close()

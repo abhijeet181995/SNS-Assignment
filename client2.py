@@ -2,7 +2,7 @@ import clientlib
 
 print("**********Welcome to Chat Client*********")
 port = int(input("Enter Port\n"))
-s = clientlib.client(port,'client1')
+s = clientlib.client(port,'client2')
 while True:
     inpt = input("Enter Command\n>>").split()
     if inpt[0]=="signin" and s.online==0 :
