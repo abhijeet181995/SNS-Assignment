@@ -82,10 +82,11 @@ class client:
         f = open(self.homeFolder+'/'+fileName,'wb')
         while(True):
             data=conn.recv(1024)
-            if not data:
+            if len(data)>0:
+                decrypted_data=crypto.decrypt_p2p(data,self.dhke.key1,self.dhke.key2,self.dhke.key3)
+                f.write(decrypted_data)
+            if len(data)<1024:
                 break
-            decrypted_data=crypto.decrypt_p2p(data,self.dhke.key1,self.dhke.key2,self.dhke.key3)
-            f.write(decrypted_data)
         f.close()
         print(fileName ," received")
 
