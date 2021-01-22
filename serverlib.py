@@ -19,21 +19,26 @@ class group:
         return self.nounce
     def getportlist(self):
         return [self.memberdic[name] for name in self.memberdic.keys()]
-    def message(self,msg):
+    def message(self,data):
         for port in self.getportlist():
-            m= socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-            m.connect(('127.0.0.1',port))
-            encrypted = crypto.encrypt_group_msg(msg.encode(),self.nounce)
+            client_sock= socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+            client_sock.connect(('127.0.0.1',port))
             messageObj={}
             messageObj['groupname'] = self.grname
-            messageObj['type'] = 'text' 
-            messageObj['msg']=msg
-            messageObj['encrypted'] = encrypted
-            m.send(pickle.dumps(messageObj))
-            # print(len((self.grname+" text")))
-            # print()
-            # m.sendall(encrypted)
-            m.close()
+            if data['type'] =='text':
+                messageObj['type'] = 'text' 
+                messageObj['encrypted'] = data['msg']
+                client_sock.sendall(pickle.dumps(messageObj))
+            else:
+                messageObj['type'] = 'file'
+                messageObj['filename']=data['filename']
+                while(True):
+                    msg=client_sock.recv(1024)
+                    client_sock.sendall(msg)
+                    if not msg:
+                        break
+
+            client_sock.close()
 
 
 
@@ -79,6 +84,6 @@ class server:
                 conn.sendall(str(groupstring).encode())
             if data['choice']=='message-group':
                 g = self.grouplist[data['groupname']]
-                g.message(data['msg'])
+                g.message(data)
                 
 

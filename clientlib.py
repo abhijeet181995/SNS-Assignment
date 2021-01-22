@@ -81,29 +81,33 @@ class client:
                 if data['type']=='text':
                     print(data['msg'])
                 else:
-                    self.storeFile(conn,data['filename'])
+                    self.storeFile(conn,data,False)
             else:                           # Group Encryption Here
                 data = pickle.loads(recvieved_message)
                 if data['type']=='text':
                     decrypted_data = crypto.decrypt_group_message(data['encrypted'],self.grouplist[data['groupname']])
                     print("Group Message :"+data['groupname'])
                     print(decrypted_data.decode())
+                else:
+                    self.storeFile(conn,data,True)
             conn.close()
-    def storeFile(self,conn,fileName):
-        print(fileName)
+    def storeFile(self,conn,data,isGroupMessage):
+        fileName =data['filename']
+        nonce= self.grouplist[data['groupname']]
         f = open(self.homeFolder+'/'+fileName,'wb')
         while(True):
-            data=conn.recv(1024)
-            if not data:
+            msg=conn.recv(1024)
+            if not msg:
                 break
-            decrypted_data=crypto.decrypt_p2p(data,self.dhke.key1,self.dhke.key2,self.dhke.key3)
+            if(isGroupMessage):
+                 decrypted_data = crypto.decrypt_group_message(msg,nonce)
+            else:
+                decrypted_data=crypto.decrypt_p2p(msg,self.dhke.key1,self.dhke.key2,self.dhke.key3)
             f.write(decrypted_data)
         f.close()
         print(fileName ," received")
     
-    def sendFileGroup(self,groupName,fileName):
-        pass
-
+    
     def sendFile(self,clientName,fileName):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
@@ -124,7 +128,6 @@ class client:
         cipher_text=crypto.encrypt_p2p(plain_text,self.dhke1.key1,self.dhke1.key2,self.dhke1.key3)
         s.sendall(cipher_text)
         print(fileName ," sent")
-        #changed size to 1023 so that encrypted result is 1024 bytes or less
         l = f.read(1023)
         while (l):
             cipher_text=crypto.encrypt_p2p(l,self.dhke1.key1,self.dhke1.key2,self.dhke1.key3)
@@ -132,6 +135,7 @@ class client:
             l = f.read(1023)
         f.close()
         s.close()
+
     def message(self,clientName,msg):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
@@ -171,12 +175,35 @@ class client:
         groupstring = s.recv(1024).decode()
         s.close()
         return groupstring
-    def mess_group(self,name,message):
+    def mess_group(self,groupName,message):
+        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        s.connect((HOST,PORT))
+        encryptedMessage = crypto.encrypt_group_msg(message.encode(),self.grouplist[groupName])
+        requestObj = {}
+        requestObj['choice'] = 'message-group'
+        requestObj['type'] = 'text'
+        requestObj['groupname'] = groupName
+        requestObj['msg'] = encryptedMessage
+        s.sendall(pickle.dumps(requestObj))
+        s.close()
+
+    def sendFileGroup(self,groupName,fileName):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
         requestObj = {}
         requestObj['choice'] = 'message-group'
-        requestObj['groupname'] = name
-        requestObj['msg'] = message
+        requestObj['groupname']=groupName
+        requestObj['type'] = 'file'
+        requestObj['filename']=fileName
         s.sendall(pickle.dumps(requestObj))
+        f = open(self.homeFolder +"/"+fileName,'rb')
+        l = f.read(1023)
+        while (l):
+            cipher_text= crypto.encrypt_group_msg(l.encode(),self.grouplist[groupName])
+            s.sendall(cipher_text)
+            l = f.read(1023)
+        f.close()
         s.close()
+        
+
+
