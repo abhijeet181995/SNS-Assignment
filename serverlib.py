@@ -24,10 +24,15 @@ class group:
             m= socket.socket(socket.AF_INET,socket.SOCK_STREAM)
             m.connect(('127.0.0.1',port))
             encrypted = crypto.encrypt_group_msg(msg.encode(),self.nounce)
-            # messageObj['groupname'] = data['groupname']
-            # messageObj['type'] = 'text' #group encrption object
-            # messageObj['msg']=data['msg'] #intiate group key exchange
-            m.sendall(self.grname.encode()+b" "+encrypted)
+            messageObj={}
+            messageObj['groupname'] = self.grname
+            messageObj['type'] = 'text' 
+            messageObj['msg']=msg
+            messageObj['encrypted'] = encrypted
+            m.send(pickle.dumps(messageObj))
+            # print(len((self.grname+" text")))
+            # print()
+            # m.sendall(encrypted)
             m.close()
 
 

@@ -83,11 +83,11 @@ class client:
                 else:
                     self.storeFile(conn,data['filename'])
             else:                           # Group Encryption Here
-                print("Group Message")
-                recvieved_message = recvieved_message.split()
-                decrypted_data = crypto.decrypt_group_message(recvieved_message[1],self.grouplist[recvieved_message[0].decode()])
-                print(recvieved_message[0].decode())
-                print(decrypted_data)
+                data = pickle.loads(recvieved_message)
+                if data['type']=='text':
+                    decrypted_data = crypto.decrypt_group_message(data['encrypted'],self.grouplist[data['groupname']])
+                    print("Group Message :"+data['groupname'])
+                    print(decrypted_data.decode())
             conn.close()
     def storeFile(self,conn,fileName):
         print(fileName)
