@@ -12,6 +12,7 @@ class client:
             self.port = port
             self.online = 0
             self.homeFolder=homeFolder
+            self.grouplist={}
     def signin(self,name,pswd):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
@@ -83,8 +84,10 @@ class client:
                     self.storeFile(conn,data['filename'])
             else:                           # Group Encryption Here
                 print("Group Message")
-                print(recvieved_message.decode())
-            
+                recvieved_message = recvieved_message.split()
+                decrypted_data = crypto.decrypt_group_message(recvieved_message[1],self.grouplist[recvieved_message[0].decode()])
+                print(recvieved_message[0].decode())
+                print(decrypted_data)
             conn.close()
     def storeFile(self,conn,fileName):
         print(fileName)
@@ -157,6 +160,7 @@ class client:
         requestObj['groupname']=name
         requestObj['port'] =self.port
         s.sendall(pickle.dumps(requestObj))
+        self.grouplist[name]=s.recv(1024).decode()
         s.close()
     def list_group(self):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)

@@ -1,6 +1,8 @@
 import clientlib
 import socket,pickle
 import json
+import random
+import crypto
 
 HOST = '127.0.0.1'
 PORT = 54005
@@ -10,25 +12,23 @@ class group:
         self.grname = name
         self.membercount=0
         self.memberdic = {}
-        # self.nounce=0.............group nounce genaration......       
+        self.nounce=str(random.randint(0,655365))
     def addmember(self,name,port):
         self.memberdic[name]=port
         self.membercount=self.membercount+1
-        # return group nounce 
+        return self.nounce
     def getportlist(self):
         return [self.memberdic[name] for name in self.memberdic.keys()]
     def message(self,msg):
         for port in self.getportlist():
             m= socket.socket(socket.AF_INET,socket.SOCK_STREAM)
             m.connect(('127.0.0.1',port))
+            encrypted = crypto.encrypt_group_msg(msg.encode(),self.nounce)
             # messageObj['groupname'] = data['groupname']
             # messageObj['type'] = 'text' #group encrption object
             # messageObj['msg']=data['msg'] #intiate group key exchange
-            m.sendall(msg.encode())
+            m.sendall(self.grname.encode()+b" "+encrypted)
             m.close()
-    # def encrypt_group(msg): ..............encrption function..............
-        # self.nounce
-        # return encrpted_text
 
 
 
@@ -61,10 +61,12 @@ class server:
             if data['choice']=='join-group':
                 if data['groupname'] in self.grouplist.keys():
                     self.grouplist[data['groupname']].addmember(data['name'],data['port'])
+                    conn.sendall(self.grouplist[data['groupname']].nounce.encode())
                 else:
                     g = group(data['groupname'])
                     g.addmember(data['name'],data['port'])
                     self.grouplist[data['groupname']]=g
+                    conn.sendall(g.nounce.encode())
                 print([name for name in self.grouplist.keys()])
             if data['choice']=='list-group':
                 print([name for name in self.grouplist.keys()])
