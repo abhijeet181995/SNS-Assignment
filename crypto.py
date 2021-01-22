@@ -18,7 +18,7 @@ def encrypt_group_msg(message, key):
     hash_obj = SHA256.new(key.encode('utf-8'))    
     hkey = hash_obj.digest()
     cipher = AES.new(hkey, AES.MODE_ECB)
-    result = cipher.encrypt(pad(message,16).encode('utf-8'))
+    result = cipher.encrypt(pad(message,16))
     return result  
 
 #input and output both are in bytes, key is in string
