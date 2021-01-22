@@ -182,6 +182,7 @@ class client:
         requestObj = {}
         requestObj['choice'] = 'message-group'
         requestObj['type'] = 'text'
+        requestObj['initiator-port'] = self.port
         requestObj['groupname'] = groupName
         requestObj['msg'] = encryptedMessage
         s.sendall(pickle.dumps(requestObj))
@@ -194,12 +195,13 @@ class client:
         requestObj['choice'] = 'message-group'
         requestObj['groupname']=groupName
         requestObj['type'] = 'file'
+        requestObj['initiator-port'] = self.port
         requestObj['filename']=fileName
         s.sendall(pickle.dumps(requestObj))
         f = open(self.homeFolder +"/"+fileName,'rb')
         l = f.read(1023)
         while (l):
-            cipher_text= crypto.encrypt_group_msg(l.encode(),self.grouplist[groupName])
+            cipher_text= crypto.encrypt_group_msg(l,self.grouplist[groupName])
             s.sendall(cipher_text)
             l = f.read(1023)
         f.close()

@@ -19,8 +19,10 @@ class group:
         return self.nounce
     def getportlist(self):
         return [self.memberdic[name] for name in self.memberdic.keys()]
-    def message(self,data):
+    def message(self,conn,data):
         for port in self.getportlist():
+            if port==data['initiator-port']:
+                continue
             client_sock= socket.socket(socket.AF_INET,socket.SOCK_STREAM)
             client_sock.connect(('127.0.0.1',port))
             messageObj={}
@@ -33,7 +35,7 @@ class group:
                 messageObj['type'] = 'file'
                 messageObj['filename']=data['filename']
                 while(True):
-                    msg=client_sock.recv(1024)
+                    msg=conn.recv(1024)
                     client_sock.sendall(msg)
                     if not msg:
                         break
@@ -84,6 +86,7 @@ class server:
                 conn.sendall(str(groupstring).encode())
             if data['choice']=='message-group':
                 g = self.grouplist[data['groupname']]
-                g.message(data)
+                g.message(conn,data)
+            conn.close()
                 
 
