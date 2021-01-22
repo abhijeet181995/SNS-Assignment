@@ -20,6 +20,14 @@ class group:
     def getportlist(self):
         return [self.memberdic[name] for name in self.memberdic.keys()]
     def message(self,conn,data):
+        if data['type'] =='file':
+            chunk_array=[]
+            while(True):
+                    msg=conn.recv(1024)
+                    if not msg:
+                        break
+                    chunk_array.append(msg)
+                    
         for port in self.getportlist():
             if port==data['initiator-port']:
                 continue
@@ -34,11 +42,9 @@ class group:
             else:
                 messageObj['type'] = 'file'
                 messageObj['filename']=data['filename']
-                while(True):
-                    msg=conn.recv(1024)
-                    client_sock.sendall(msg)
-                    if not msg:
-                        break
+                client_sock.sendall(messageObj)
+                for item in chunk_array:
+                    client_sock.sendall(item)
 
             client_sock.close()
 
