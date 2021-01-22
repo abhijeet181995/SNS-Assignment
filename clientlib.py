@@ -93,14 +93,13 @@ class client:
             conn.close()
     def storeFile(self,conn,data,isGroupMessage):
         fileName =data['filename']
-        nonce= self.grouplist[data['groupname']]
         f = open(self.homeFolder+'/'+fileName,'wb')
         while(True):
             msg=conn.recv(1024)
             if not msg:
                 break
             if(isGroupMessage):
-                 decrypted_data = crypto.decrypt_group_message(msg,nonce)
+                 decrypted_data = crypto.decrypt_group_message(msg,self.grouplist[data['groupname']])
             else:
                 decrypted_data=crypto.decrypt_p2p(msg,self.dhke.key1,self.dhke.key2,self.dhke.key3)
             f.write(decrypted_data)
@@ -178,7 +177,8 @@ class client:
     def mess_group(self,groupName,message):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
-        encryptedMessage = crypto.encrypt_group_msg(message.encode(),self.grouplist[groupName])
+        print(self.grouplist[groupName])
+        encryptedMessage = crypto.encrypt_group_msg(message.encode(),str(self.grouplist[groupName]))
         requestObj = {}
         requestObj['choice'] = 'message-group'
         requestObj['type'] = 'text'
@@ -187,7 +187,7 @@ class client:
         s.sendall(pickle.dumps(requestObj))
         s.close()
 
-    def sendFileGroup(self,groupName,fileName):
+    def send_file_group(self,groupName,fileName):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
         requestObj = {}
