@@ -42,7 +42,7 @@ class group:
             else:
                 messageObj['type'] = 'file'
                 messageObj['filename']=data['filename']
-                client_sock.sendall(messageObj)
+                client_sock.sendall(pickle.dumps(messageObj))
                 for item in chunk_array:
                     client_sock.sendall(item)
 
