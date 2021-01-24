@@ -13,12 +13,10 @@
 
 
 ## Issue Resolved
-- Group Messaging Encrption
+- Group Messaging
 - P2P messaging
 - P2P Encrption
 
 
 ## Issues Pending
-- Group media encrption
-- P2P media encryption
 - Load Balancing
