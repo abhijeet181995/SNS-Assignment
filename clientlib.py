@@ -13,6 +13,7 @@ class client:
             self.online = 0
             self.homeFolder=homeFolder
             self.grouplist={}
+
     def signin(self,name,pswd):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
@@ -23,10 +24,12 @@ class client:
         s.sendall(pickle.dumps(requestObj))
         if s.recv(1).decode()=="1":
             self.online = 1
+            s.close()
             return 1
         else:
+            s.close()
             return 0
-        s.close()
+
     def signup(self,name,rollnum,pswd):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
@@ -42,10 +45,12 @@ class client:
         s.sendall(pickle.dumps(requestObj))
         if s.recv(1).decode()=="1":
             threading.Thread(target=self.listen).start()
+            s.close()
             return 1
         else:
+            s.close()
             return 0
-        s.close()
+
     def listen(self):
         print('Server Started Listening....')
         host = '127.0.0.1'
@@ -77,14 +82,14 @@ class client:
                 encrypted_message=bytes(encrypted_message)
                 decrypted_data=crypto.decrypt_p2p(encrypted_message,self.dhke.key1,self.dhke.key2,self.dhke.key3)
                 data = json.loads(decrypted_data)
-                print(data)
+                #print(data)
                 if data['type']=='text':
                     print(data['msg'])
                 else:
                     self.storeFile(conn,data,False)
             else:                       
                 data = pickle.loads(recvieved_message)
-                print(data)
+                #print(data)
                 if data['type']=='text':
                     decrypted_data = crypto.decrypt_group_message(data['encrypted'],self.grouplist[data['groupname']])
                     print("Group Message :"+data['groupname'])
@@ -92,6 +97,7 @@ class client:
                 else:
                     self.storeFile(conn,data,True)
             conn.close()
+
     def storeFile(self,conn,data,isGroupMessage):
         fileName =data['filename']
         f = open(self.homeFolder+'/'+fileName,'wb')
@@ -106,8 +112,7 @@ class client:
             f.write(decrypted_data)
         f.close()
         print(fileName ," received")
-    
-    
+      
     def sendFile(self,clientName,fileName):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
@@ -155,6 +160,7 @@ class client:
         cipher_text=crypto.encrypt_p2p(plain_text,self.dhke1.key1,self.dhke1.key2,self.dhke1.key3)
         s.sendall(cipher_text)
         s.close()
+
     def join_group(self,name):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
@@ -166,6 +172,7 @@ class client:
         s.sendall(pickle.dumps(requestObj))
         self.grouplist[name]=s.recv(1024).decode()
         s.close()
+
     def list_group(self):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
@@ -175,6 +182,7 @@ class client:
         groupstring = s.recv(1024).decode()
         s.close()
         return groupstring
+
     def mess_group(self,groupName,message):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect((HOST,PORT))
