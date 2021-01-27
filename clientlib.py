@@ -60,7 +60,7 @@ class client:
         server.listen()
         while True:
             conn,addr=server.accept()
-            print(addr)
+            #print(addr)
             recvieved_message=bytearray()
             while True:
                 temp_recvieved_message=conn.recv(1024)
@@ -84,9 +84,9 @@ class client:
                 data = json.loads(decrypted_data)
                 #print(data)
                 if data['type']=='text':
-                    print(data['msg'])
+                    print(data['sender'],':',data['msg'])
                 else:
-                    self.storeFile(conn,data,False)
+                    self.storeFile(conn,data,False,data['sender'])
             else:                       
                 data = pickle.loads(recvieved_message)
                 #print(data)
@@ -98,7 +98,7 @@ class client:
                     self.storeFile(conn,data,True)
             conn.close()
 
-    def storeFile(self,conn,data,isGroupMessage):
+    def storeFile(self,conn,data,isGroupMessage,sender):
         fileName =data['filename']
         f = open(self.homeFolder+'/'+fileName,'wb')
         while(True):
@@ -111,7 +111,7 @@ class client:
                 decrypted_data=crypto.decrypt_p2p(msg,self.dhke.key1,self.dhke.key2,self.dhke.key3)
             f.write(decrypted_data)
         f.close()
-        print(fileName ," received")
+        print(fileName ," received from ",sender)
       
     def sendFile(self,clientName,fileName):
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -123,6 +123,7 @@ class client:
         client_port = pickle.loads(s.recv(1024))['port']
         f = open(self.homeFolder +"/"+fileName,'rb')
         messageObj = {}
+        messageObj['sender']=self.name
         messageObj['type'] = 'file'
         messageObj['filename']=fileName
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -150,6 +151,7 @@ class client:
         s.sendall(pickle.dumps(requestObj))
         client_port = pickle.loads(s.recv(1024))['port']
         messageObj = {}
+        messageObj['sender']=self.name
         messageObj['type'] = 'text'
         messageObj['msg']=msg
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -184,37 +186,45 @@ class client:
         return groupstring
 
     def mess_group(self,groupName,message):
-        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        s.connect((HOST,PORT))
-        print(self.grouplist[groupName])
-        encryptedMessage = crypto.encrypt_group_msg(message.encode(),str(self.grouplist[groupName]))
-        requestObj = {}
-        requestObj['choice'] = 'message-group'
-        requestObj['type'] = 'text'
-        requestObj['initiator-port'] = self.port
-        requestObj['groupname'] = groupName
-        requestObj['msg'] = encryptedMessage
-        s.sendall(pickle.dumps(requestObj))
-        s.close()
+        if(groupName in self.grouplist.keys()):
+            s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+            s.connect((HOST,PORT))
+            #print(self.grouplist[groupName])
+            
+            encryptedMessage = crypto.encrypt_group_msg(message.encode(),str(self.grouplist[groupName]))
+            requestObj = {}
+            requestObj['choice'] = 'message-group'
+            requestObj['type'] = 'text'
+            requestObj['name'] = self.name
+            requestObj['initiator-port'] = self.port
+            requestObj['groupname'] = groupName
+            requestObj['msg'] = encryptedMessage
+            s.sendall(pickle.dumps(requestObj))
+            s.close()
+        else:
+            print("Not in group")
 
     def send_file_group(self,groupName,fileName):
-        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        s.connect((HOST,PORT))
-        requestObj = {}
-        requestObj['choice'] = 'message-group'
-        requestObj['groupname']=groupName
-        requestObj['type'] = 'file'
-        requestObj['initiator-port'] = self.port
-        requestObj['filename']=fileName
-        s.sendall(pickle.dumps(requestObj))
-        f = open(self.homeFolder +"/"+fileName,'rb')
-        l = f.read(1023)
-        while (l):
-            cipher_text= crypto.encrypt_group_msg(l,self.grouplist[groupName])
-            s.sendall(cipher_text)
+        if(groupName in self.grouplist.keys()):
+            s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+            s.connect((HOST,PORT))
+            requestObj = {}
+            requestObj['choice'] = 'message-group'
+            requestObj['groupname']=groupName
+            requestObj['type'] = 'file'
+            requestObj['initiator-port'] = self.port
+            requestObj['filename']=fileName
+            requestObj['name'] = self.name
+            s.sendall(pickle.dumps(requestObj))
+            f = open(self.homeFolder +"/"+fileName,'rb')
             l = f.read(1023)
-        f.close()
-        s.close()
-        
+            while (l):
+                cipher_text= crypto.encrypt_group_msg(l,self.grouplist[groupName])
+                s.sendall(cipher_text)
+                l = f.read(1023)
+            f.close()
+            s.close()
+        else:
+            print("Not in group")
 
 

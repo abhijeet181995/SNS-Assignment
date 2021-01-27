@@ -64,15 +64,18 @@ class server:
             conn,addr=self.s.accept()
             data = pickle.loads(conn.recv(1024))
             if data['choice']=='signin':
-                if data['name'] in self.clientlist.keys() and self.clientlist[data['name']]['pswd']==data['pswd']:
+                if data['name'] in self.clientlist.keys() and self.clientlist[data['name']]['pswd']==data['pswd'] and 'online' not in self.clientlist[data['name']].keys():
                     self.clientlist[data['name']]['online']=1
                     conn.send(b"1")
                 else:
                     conn.send(b"0")
             if data['choice']=='signup':
-                self.clientlist[data['name']]=data
-                print(data['name'])
-                conn.send(b"1")
+                if(data['name'] in self.clientlist.keys()):
+                    conn.send(b'0')
+                else:
+                    self.clientlist[data['name']]=data
+                    print(data['name'])
+                    conn.send(b"1")
             if data['choice']=='get-client-port':
                 print(data['name'])
                 print(self.clientlist[data['name']])
@@ -93,8 +96,10 @@ class server:
                 groupstring = [[self.grouplist[name].grname,self.grouplist[name].membercount] for name in self.grouplist.keys()]
                 conn.sendall(str(groupstring).encode())
             if data['choice']=='message-group':
+                print(data)
                 g = self.grouplist[data['groupname']]
-                g.message(conn,data)
+                if(data['name'] in g.memberdic.keys()):
+                    g.message(conn,data)
             conn.close()
                 
 
