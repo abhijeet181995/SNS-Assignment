@@ -95,7 +95,7 @@ class client:
                     print("Group Message :"+data['groupname'])
                     print(decrypted_data.decode())
                 else:
-                    self.storeFile(conn,data,True)
+                    self.storeFile(conn,data,True,data['groupname'])
             conn.close()
 
     def storeFile(self,conn,data,isGroupMessage,sender):
